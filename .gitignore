@@ -1,25 +1,26 @@
 # ========== Backend (ASP.NET Core / .NET) ==========
-backend/bin/
-backend/obj/
-backend/out/
-backend/.vs/
-backend/.vscode/
+backend/api/bin/
+backend/api/obj/
+backend/api/out/
+backend/api/.vs/
+backend/api/.vscode/
 
 # User-specific files
-backend/*.user
-backend/*.suo
-backend/*.swp
+backend/api/*.user
+backend/api/*.suo
+backend/api/*.swp
 
 # Logs
-backend/*.log
-backend/logs/
-backend/**/Logs/
+backend/api/*.log
+backend/api/logs/
+backend/api/**/Logs/
 
 # Secrets & settings
-backend/appsettings.Development.json
-backend/appsettings.*.local.json
-backend/.env
+backend/api/appsettings.json
+backend/api/appsettings.Development.json
+backend/api/appsettings.*.local.json
+backend/api/.env
 
 # Publish output
-backend/publish/
-backend/wwwroot/lib/
+backend/api/publish/
+backend/api/wwwroot/lib/

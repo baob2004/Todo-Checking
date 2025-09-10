@@ -22,10 +22,15 @@ namespace api.Controllers
 
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] bool? isDone)
         {
             var userId = GetUserId();
-            return Ok(await _ctx.TodoItems.Where(t => t.UserId == userId).Select(t => t.ToDto()).ToListAsync());
+            var query = _ctx.TodoItems.AsQueryable();
+
+            if (isDone.HasValue) query = query.Where(t => t.IsDone == isDone);
+
+            var todos = await query.Where(t => t.UserId == userId).Select(t => t.ToDto()).ToListAsync();
+            return Ok(todos);
         }
 
         [Authorize]

@@ -2,6 +2,7 @@ using System.Text;
 using api.Data;
 using api.Entities;
 using api.Interfaces;
+using api.Options;
 using api.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -83,6 +84,11 @@ namespace api.Extensions
                 };
             });
 
+
+            services.Configure<GoogleAuthOptions>(
+                configuration.GetSection("Authentication:Google"));
+
+            services.AddScoped<IGoogleAuthService, GoogleAuthService>();
 
             services.AddScoped<ITokenService, TokenService>();
         }

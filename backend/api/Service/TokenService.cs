@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using api.Entities;
@@ -18,6 +19,13 @@ namespace api.Service
         {
             _cfg = cfg;
         }
+
+        public string CreateRefreshToken()
+        {
+            var bytes = RandomNumberGenerator.GetBytes(64);
+            return Convert.ToBase64String(bytes);
+        }
+
         public string CreateToken(AppUser user)
         {
             // Lấy config từ appsettings.json
@@ -45,6 +53,11 @@ namespace api.Service
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        public DateTime GetRefreshTokenExpiry()
+        {
+            return DateTime.UtcNow.AddMinutes(int.Parse(_cfg["Jwt:ExpiresMinutes"] ?? "60"));
         }
     }
 }

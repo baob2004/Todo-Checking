@@ -15,10 +15,12 @@ namespace api.Controllers
     {
         private readonly UserManager<AppUser> _userManager;
         private readonly ITokenService _tokenService;
-        public AuthController(UserManager<AppUser> userManager, ITokenService tokenService)
+        private readonly IGoogleAuthService _googleSvc;
+        public AuthController(UserManager<AppUser> userManager, ITokenService tokenService, IGoogleAuthService googleSvc)
         {
             _userManager = userManager;
             _tokenService = tokenService;
+            _googleSvc = googleSvc;
         }
 
         [HttpPost("register")]
@@ -112,6 +114,15 @@ namespace api.Controllers
                 AccessToken = token,
                 RefreshToken = refreshToken
             });
+        }
+
+        [AllowAnonymous]
+        [HttpPost("google")]
+        public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginDto dto)
+        {
+            var res = await _googleSvc.LoginAsync(dto.IdToken, HttpContext.Connection.RemoteIpAddress?.ToString());
+            if (res is null) return Unauthorized("Invalid Google ID token");
+            return Ok(res);
         }
     }
 }

@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
-namespace api.Service
+namespace api.Services
 {
     public class GoogleAuthService : IGoogleAuthService
 

@@ -1,7 +1,9 @@
 using System.Security.Claims;
 using api.Data;
 using api.Dtos;
+using api.Interfaces.Services;
 using api.Mapping;
+using api.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -13,9 +15,11 @@ namespace api.Controllers
     public class TodosController : ControllerBase
     {
         private readonly AppDbContext _ctx;
-        public TodosController(AppDbContext ctx)
+        private readonly ITodoService _todoSvc;
+        public TodosController(AppDbContext ctx, ITodoService todoSvc)
         {
             _ctx = ctx;
+            _todoSvc = todoSvc;
         }
         private string GetUserId() =>
             User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
@@ -25,11 +29,8 @@ namespace api.Controllers
         public async Task<IActionResult> GetAll([FromQuery] bool? isDone)
         {
             var userId = GetUserId();
-            var query = _ctx.TodoItems.AsQueryable();
+            var todos = await _todoSvc.GetTodosAsync(userId, isDone);
 
-            if (isDone.HasValue) query = query.Where(t => t.IsDone == isDone);
-
-            var todos = await query.Where(t => t.UserId == userId).Select(t => t.ToDto()).ToListAsync();
             return Ok(todos);
         }
 
@@ -38,8 +39,9 @@ namespace api.Controllers
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
             var userId = GetUserId();
-            var todo = await _ctx.TodoItems.Where(t => t.UserId == userId).FirstOrDefaultAsync(t => t.Id == id);
-            return todo == null ? NotFound() : Ok(todo.ToDto());
+            var todo = await _todoSvc.GetTodoAsync(userId, id);
+
+            return todo == null ? NotFound() : Ok(todo);
         }
 
         [Authorize]
@@ -48,13 +50,9 @@ namespace api.Controllers
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var userId = GetUserId();
-            var entity = dto.ToEntity();
-            entity.UserId = userId;
+            var createdTodo = await _todoSvc.CreateTodoAsync(userId, dto);
 
-            await _ctx.TodoItems.AddAsync(entity);
-            await _ctx.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetById), new { id = entity.Id }, entity.ToDto());
+            return CreatedAtAction(nameof(GetById), new { id = createdTodo.Id }, createdTodo);
         }
 
         [Authorize]
@@ -63,11 +61,8 @@ namespace api.Controllers
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var userId = GetUserId();
-            var entity = await _ctx.TodoItems.Where(t => t.UserId == userId).FirstOrDefaultAsync(t => t.Id == id);
+            var entity = await _todoSvc.UpdateTodoAsync(userId, id, dto);
             if (entity == null) return NotFound();
-
-            dto.UpdateEntity(entity);
-            await _ctx.SaveChangesAsync();
 
             return NoContent();
         }
@@ -77,11 +72,8 @@ namespace api.Controllers
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
             var userId = GetUserId();
-            var entity = await _ctx.TodoItems.Where(t => t.UserId == userId).FirstOrDefaultAsync(t => t.Id == id);
-            if (entity == null) return NotFound();
-
-            _ctx.Remove(entity);
-            await _ctx.SaveChangesAsync();
+            var exists = await _todoSvc.DeleteTodoAsync(userId, id);
+            if (exists is false) return NotFound();
 
             return NoContent();
         }

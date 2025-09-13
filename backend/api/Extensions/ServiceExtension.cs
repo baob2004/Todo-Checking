@@ -3,7 +3,7 @@ using api.Data;
 using api.Entities;
 using api.Interfaces;
 using api.Options;
-using api.Services;
+using api.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -22,11 +22,7 @@ namespace api.Extensions
 
             // CORS (để FE gọi sau này)
             services.AddCors(o => o.AddDefaultPolicy(p => p
-                .WithOrigins(
-                    "http://localhost:3000",
-                    "http://localhost:5500",
-                    "http://127.0.0.1:5500",
-                    "http://localhost:5173")
+                .WithOrigins("http://localhost:5173")
                 .AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
 
             services.AddSwaggerGen(option =>
@@ -67,7 +63,8 @@ namespace api.Extensions
             .AddEntityFrameworkStores<AppDbContext>()
             .AddDefaultTokenProviders();
 
-
+            services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
+            var jwt = configuration.GetSection("Jwt").Get<JwtOptions>()!;
             services.AddAuthentication(opt =>
             {
                 opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -87,7 +84,7 @@ namespace api.Extensions
                 };
             });
 
-            // Lấy clientID
+
             services.Configure<GoogleAuthOptions>(
                 configuration.GetSection("Authentication:Google"));
 
@@ -95,5 +92,9 @@ namespace api.Extensions
 
             services.AddScoped<ITokenService, TokenService>();
         }
+    }
+
+    internal class JwtOptions
+    {
     }
 }

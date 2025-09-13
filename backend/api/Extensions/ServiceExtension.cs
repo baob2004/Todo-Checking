@@ -66,8 +66,6 @@ namespace api.Extensions
             .AddEntityFrameworkStores<AppDbContext>()
             .AddDefaultTokenProviders();
 
-            services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
-            var jwt = configuration.GetSection("Jwt").Get<JwtOptions>()!;
             services.AddAuthentication(opt =>
             {
                 opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -101,9 +99,5 @@ namespace api.Extensions
 
 
         }
-    }
-
-    internal class JwtOptions
-    {
     }
 }

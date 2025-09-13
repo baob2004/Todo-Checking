@@ -2,7 +2,10 @@ using System.Text;
 using api.Data;
 using api.Entities;
 using api.Interfaces;
+using api.Interfaces.Common;
+using api.Interfaces.Services;
 using api.Options;
+using api.Repositories;
 using api.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -90,7 +93,13 @@ namespace api.Extensions
 
             services.AddScoped<IGoogleAuthService, GoogleAuthService>();
 
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<ITokenService, TokenService>();
+
+            services.AddScoped<ITodoRepository, TodoRepository>();
+            services.AddScoped<ITodoService, TodoService>();
+
+
         }
     }
 

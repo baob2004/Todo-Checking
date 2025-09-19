@@ -1,23 +1,28 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using api.Dtos;
+using api.Entities;
 using api.Interfaces.Common;
 using api.Interfaces.Services;
 using api.Mapping;
 using api.Repositories;
+using AutoMapper;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
-namespace api.Service
+namespace api.Services
 {
     public class TodoService : ITodoService
     {
         private readonly IUnitOfWork _uow;
-        public TodoService(IUnitOfWork uow)
+        private readonly IMapper _mapper;
+        public TodoService(IUnitOfWork uow, IMapper mapper)
         {
             _uow = uow;
+            _mapper = mapper;
         }
 
         public async Task<TodoDto> CreateTodoAsync(string userId, TodoCreateDto dto)
@@ -33,46 +38,50 @@ namespace api.Service
 
         public async Task<bool> DeleteTodoAsync(string userId, int id)
         {
-            var q = _uow.TodoRepository.QueryByUser(userId);
-            var entity = await q.FirstOrDefaultAsync(t => t.Id == id);
-            if (entity == null) return false;
+            var todo = await _uow.TodoRepository.GetAsync(t => t.UserId == userId && t.Id == id);
+            if (todo == null) return false;
 
-            _uow.TodoRepository.Remove(entity);
+            _uow.TodoRepository.Remove(todo);
             await _uow.SaveChangesAsync();
             return true;
         }
 
         public async Task<TodoDto?> GetTodoAsync(string userId, int id)
         {
-            var query = _uow.TodoRepository.QueryByUser(userId);
-            var todo = await query.Where(t => t.UserId == userId).FirstOrDefaultAsync(t => t.Id == id);
-            return todo == null ? null : todo.ToDto();
+            var todo = await _uow.TodoRepository.GetAsync(t => t.UserId == userId && t.Id == id);
+            var res = _mapper.Map<TodoDto>(todo);
+            return res;
         }
 
         public async Task<List<TodoDto>> GetTodosAsync(string userId, bool? isDone)
         {
-            var query = _uow.TodoRepository.QueryByUser(userId);
+            Expression<Func<TodoItem, bool>> predicate = t => t.UserId == userId;
 
-            if (isDone.HasValue) query = query.Where(t => t.IsDone == isDone);
+            if (isDone.HasValue)
+            {
+                predicate = t => t.UserId == userId && t.IsDone == isDone.Value;
+            }
 
-            var todos = await query.Select(t => t.ToDto()).ToListAsync();
+            var todos = await _uow.TodoRepository.GetAllAsync(predicate);
 
-            return todos;
+            var res = _mapper.Map<List<TodoDto>>(todos);
+
+            return res;
         }
 
         public async Task<TodoDto?> UpdateTodoAsync(string userId, int id, TodoUpdateDto dto)
         {
-            var q = _uow.TodoRepository.QueryByUser(userId);
-            var entity = await q.FirstOrDefaultAsync(t => t.Id == id);
-            if (entity == null) return null;
+            var todo = await _uow.TodoRepository.GetAsync(t => t.UserId == userId && t.Id == id);
+            if (todo == null) return null;
 
             // cập nhật field cho phép sửa
-            dto.UpdateEntity(entity);
+            dto.UpdateEntity(todo);
+            _uow.TodoRepository.Update(todo);
 
-            _uow.TodoRepository.Update(entity);
             await _uow.SaveChangesAsync();
 
-            return entity.ToDto();
+            var res = _mapper.Map<TodoDto>(todo);
+            return res;
         }
     }
 }

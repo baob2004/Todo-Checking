@@ -34,6 +34,16 @@ namespace api.Controllers
                     UserName = dto.Username,
                     Email = dto.Email
                 };
+
+                if (await _userManager.FindByNameAsync(user.UserName) != null)
+                {
+                    return BadRequest("Username already taken");
+                }
+                if (await _userManager.FindByEmailAsync(user.Email) != null)
+                {
+                    return BadRequest("Email already registed");
+                }
+
                 var createdUser = await _userManager.CreateAsync(user, dto.Password);
                 if (createdUser.Succeeded)
                 {

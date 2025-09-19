@@ -1,4 +1,5 @@
 using System.Text;
+using api.Configurations;
 using api.Data;
 using api.Entities;
 using api.Interfaces;
@@ -6,7 +7,7 @@ using api.Interfaces.Common;
 using api.Interfaces.Services;
 using api.Options;
 using api.Repositories;
-using api.Service;
+using api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -30,7 +31,7 @@ namespace api.Extensions
 
             services.AddSwaggerGen(option =>
             {
-                option.SwaggerDoc("v1", new OpenApiInfo { Title = "Demo API", Version = "v1" });
+                option.SwaggerDoc("v1", new OpenApiInfo { Title = "TodoChecking Api", Version = "v1" });
                 option.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
                     In = ParameterLocation.Header,
@@ -85,6 +86,7 @@ namespace api.Extensions
                 };
             });
 
+            services.AddAutoMapper(typeof(MapperInitializer));
 
             services.Configure<GoogleAuthOptions>(
                 configuration.GetSection("Authentication:Google"));

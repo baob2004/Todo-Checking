@@ -1,9 +1,10 @@
 using System.Security.Claims;
 using api.Data;
 using api.Dtos;
+using api.Entities;
 using api.Interfaces.Services;
 using api.Mapping;
-using api.Service;
+using api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -16,10 +17,12 @@ namespace api.Controllers
     {
         private readonly AppDbContext _ctx;
         private readonly ITodoService _todoSvc;
-        public TodosController(AppDbContext ctx, ITodoService todoSvc)
+        private readonly ILogger<TodosController> _logger;
+        public TodosController(AppDbContext ctx, ITodoService todoSvc, ILogger<TodosController> logger)
         {
             _ctx = ctx;
             _todoSvc = todoSvc;
+            _logger = logger;
         }
         private string GetUserId() =>
             User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
@@ -28,10 +31,18 @@ namespace api.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] bool? isDone)
         {
-            var userId = GetUserId();
-            var todos = await _todoSvc.GetTodosAsync(userId, isDone);
+            try
+            {
+                var userId = GetUserId();
+                var todos = await _todoSvc.GetTodosAsync(userId, isDone);
 
-            return Ok(todos);
+                return Ok(todos);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Something Went Wrong in the {nameof(GetAll)}");
+                return StatusCode(500, "Internal Server Error. Please Try Again Later");
+            }
         }
 
         [Authorize]

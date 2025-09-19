@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using api.Data;
 using api.Interfaces;
@@ -39,15 +40,47 @@ namespace api.Repositories
             return await _set.FindAsync(id) != null;
         }
 
-        public async Task<IReadOnlyList<T>> GetAllAsync()
+        public async Task<IReadOnlyList<T>> GetAllAsync(
+            Expression<Func<T, bool>>? predicate = null,
+            Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null,
+            bool asNoTracking = true,
+            CancellationToken cancellationToken = default,
+            params Expression<Func<T, object>>[] includes)
         {
-            return await _set.ToListAsync();
+            IQueryable<T> query = _set;
+
+            if (asNoTracking)
+                query = query.AsNoTracking();
+
+            if (includes is { Length: > 0 })
+                query = ApplyIncludes(query, includes);
+
+            if (predicate is not null)
+                query = query.Where(predicate);
+
+            if (orderBy is not null)
+                query = orderBy(query);
+
+            return await query.ToListAsync(cancellationToken);
         }
 
-        public async Task<T?> GetByIdAsync(int id)
+        public async Task<T?> GetAsync(
+            Expression<Func<T, bool>> predicate,
+            bool asNoTracking = true,
+            CancellationToken cancellationToken = default,
+            params Expression<Func<T, object>>[] includes)
         {
-            return await _set.FindAsync(id);
+            IQueryable<T> query = _set;
+
+            if (asNoTracking)
+                query = query.AsNoTracking();
+
+            if (includes is { Length: > 0 })
+                query = ApplyIncludes(query, includes);
+
+            return await query.FirstOrDefaultAsync(predicate, cancellationToken);
         }
+
 
         public void Remove(T entity)
         {
@@ -62,6 +95,15 @@ namespace api.Repositories
         public void Update(T entity)
         {
             _set.Update(entity);
+        }
+
+        private static IQueryable<T> ApplyIncludes(IQueryable<T> query, params Expression<Func<T, object>>[] includes)
+        {
+            foreach (var include in includes)
+            {
+                query = query.Include(include);
+            }
+            return query;
         }
     }
 }

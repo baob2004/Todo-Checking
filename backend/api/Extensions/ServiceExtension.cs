@@ -18,7 +18,7 @@ namespace api.Extensions
 {
     public static class ServiceExtension
     {
-        public static void ServiceExtensions(this IServiceCollection services, IConfiguration configuration)
+        public static void ConfigureServices(this IServiceCollection services, IConfiguration configuration)
         {
             // EF Core (SQL Server)
             services.AddDbContext<AppDbContext>(opt =>
@@ -57,15 +57,7 @@ namespace api.Extensions
                 });
             });
 
-            services.AddIdentity<AppUser, IdentityRole>(opt =>
-            {
-                opt.Password.RequireDigit = true;
-                opt.Password.RequireNonAlphanumeric = true;
-                opt.Password.RequireUppercase = true;
-                opt.Password.RequiredLength = 8;
-            })
-            .AddEntityFrameworkStores<AppDbContext>()
-            .AddDefaultTokenProviders();
+            services.ConfigureIdentity();
 
             services.AddAuthentication(opt =>
             {
@@ -98,8 +90,20 @@ namespace api.Extensions
 
             services.AddScoped<ITodoRepository, TodoRepository>();
             services.AddScoped<ITodoService, TodoService>();
+        }
+        public static void ConfigureIdentity(this IServiceCollection services)
+        {
+            services.AddIdentity<AppUser, IdentityRole>(opt =>
+            {
+                opt.Password.RequireDigit = true;
+                opt.Password.RequireNonAlphanumeric = true;
+                opt.Password.RequireUppercase = true;
+                opt.Password.RequiredLength = 8;
 
-
+                opt.User.RequireUniqueEmail = true;
+            })
+            .AddEntityFrameworkStores<AppDbContext>()
+            .AddDefaultTokenProviders();
         }
     }
 }

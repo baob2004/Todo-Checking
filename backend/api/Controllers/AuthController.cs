@@ -14,13 +14,15 @@ namespace api.Controllers
     public class AuthController : ControllerBase
     {
         private readonly UserManager<AppUser> _userManager;
+        private readonly SignInManager<AppUser> _signInManager;
         private readonly ITokenService _tokenService;
         private readonly IGoogleAuthService _googleSvc;
-        public AuthController(UserManager<AppUser> userManager, ITokenService tokenService, IGoogleAuthService googleSvc)
+        public AuthController(UserManager<AppUser> userManager, ITokenService tokenService, IGoogleAuthService googleSvc, SignInManager<AppUser> signInManager)
         {
             _userManager = userManager;
             _tokenService = tokenService;
             _googleSvc = googleSvc;
+            _signInManager = signInManager;
         }
 
         [HttpPost("register")]
@@ -77,28 +79,35 @@ namespace api.Controllers
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
-
-            var user = await _userManager.FindByNameAsync(dto.Username);
-
-            if (user == null) return Unauthorized("Username and/or password wrong");
-
-            var res = await _userManager.CheckPasswordAsync(user, dto.Password);
-
-            if (!res) return Unauthorized("Username and/or password wrong");
-
-            var token = _tokenService.CreateToken(user);
-
-            var refreshToken = _tokenService.CreateRefreshToken();
-
-            user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiryTime = _tokenService.GetRefreshTokenExpiry();
-            await _userManager.UpdateAsync(user);
-
-            return Ok(new TokenResponseDto
+            try
             {
-                AccessToken = token,
-                RefreshToken = refreshToken
-            });
+                var user = await _userManager.FindByNameAsync(dto.Username);
+
+                if (user == null) return Unauthorized("Username and/or password wrong");
+
+                var res = await _signInManager.PasswordSignInAsync(user.Email!, dto.Password, false, false);
+
+                if (!res.Succeeded) return Unauthorized("Username and/or password wrong");
+
+                var token = _tokenService.CreateToken(user);
+
+                var refreshToken = _tokenService.CreateRefreshToken();
+
+                user.RefreshToken = refreshToken;
+                user.RefreshTokenExpiryTime = _tokenService.GetRefreshTokenExpiry();
+                await _userManager.UpdateAsync(user);
+
+                return Ok(new TokenResponseDto
+                {
+                    AccessToken = token,
+                    RefreshToken = refreshToken
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+
         }
 
         [HttpPost("refresh-token")]

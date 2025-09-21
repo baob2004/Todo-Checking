@@ -85,7 +85,7 @@ namespace api.Controllers
 
                 if (user == null) return Unauthorized("Username and/or password wrong");
 
-                var res = await _signInManager.PasswordSignInAsync(user.Email!, dto.Password, false, false);
+                var res = await _signInManager.PasswordSignInAsync(user.UserName!, dto.Password, false, false);
 
                 if (!res.Succeeded) return Unauthorized("Username and/or password wrong");
 

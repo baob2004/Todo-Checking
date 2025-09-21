@@ -4,6 +4,7 @@ using api.Data;
 using api.Entities;
 using api.Interfaces;
 using api.Interfaces.Common;
+using api.Interfaces.External;
 using api.Interfaces.Services;
 using api.Options;
 using api.Repositories;
@@ -83,7 +84,13 @@ namespace api.Extensions
             services.Configure<GoogleAuthOptions>(
                 configuration.GetSection("Authentication:Google"));
 
+            services.Configure<DataProtectionTokenProviderOptions>(o =>
+            {
+                o.TokenLifespan = TimeSpan.FromHours(2);
+            });
+
             services.AddScoped<IGoogleAuthService, GoogleAuthService>();
+            services.AddScoped<IEmailSender, SmtpEmailSender>();
 
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<ITokenService, TokenService>();

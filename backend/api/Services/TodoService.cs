@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using api.Dtos;
 using api.Entities;
 using api.Interfaces.Common;
 using api.Interfaces.Services;
-using api.Mapping;
 using api.Repositories;
 using AutoMapper;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -27,13 +27,15 @@ namespace api.Services
 
         public async Task<TodoDto> CreateTodoAsync(string userId, TodoCreateDto dto)
         {
-            var entity = dto.ToEntity();
+            var entity = _mapper.Map<TodoItem>(dto);
             entity.UserId = userId;
 
             await _uow.TodoRepository.AddAsync(entity);
             await _uow.SaveChangesAsync();
 
-            return entity.ToDto();
+            // lúc này entity.Id đã có giá trị
+            var res = _mapper.Map<TodoDto>(entity);
+            return res;
         }
 
         public async Task<bool> DeleteTodoAsync(string userId, int id)
@@ -75,7 +77,7 @@ namespace api.Services
             if (todo == null) return null;
 
             // cập nhật field cho phép sửa
-            dto.UpdateEntity(todo);
+            _mapper.Map(dto, todo);
             _uow.TodoRepository.Update(todo);
 
             await _uow.SaveChangesAsync();

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using api.Models.Common;
 
 namespace api.Interfaces.Common
 {
@@ -14,6 +15,7 @@ namespace api.Interfaces.Common
             bool asNoTracking = true,
             CancellationToken cancellationToken = default,
             params Expression<Func<T, object>>[] includes);
+
 
         Task<T?> GetAsync(
             Expression<Func<T, bool>> predicate,

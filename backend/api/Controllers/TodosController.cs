@@ -3,6 +3,7 @@ using api.Data;
 using api.Dtos;
 using api.Entities;
 using api.Interfaces.Services;
+using api.Models.Common;
 using api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -28,12 +29,12 @@ namespace api.Controllers
 
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] bool? isDone)
+        public async Task<IActionResult> GetAll([FromQuery] bool? isDone, [FromQuery] string? title, [FromQuery] PagedRequest pagedRequest)
         {
             try
             {
                 var userId = GetUserId();
-                var todos = await _todoSvc.GetTodosAsync(userId, isDone);
+                var todos = await _todoSvc.GetTodosPagedAsync(userId, pagedRequest, isDone, title);
 
                 return Ok(todos);
             }

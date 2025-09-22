@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using api.Data;
 using api.Interfaces;
 using api.Interfaces.Common;
+using api.Models.Common;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -105,5 +106,6 @@ namespace api.Repositories
             }
             return query;
         }
+
     }
 }

@@ -8,8 +8,10 @@ using api.Dtos;
 using api.Entities;
 using api.Interfaces.Common;
 using api.Interfaces.Services;
+using api.Models.Common;
 using api.Repositories;
 using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
@@ -55,21 +57,34 @@ namespace api.Services
             return res;
         }
 
-        public async Task<List<TodoDto>> GetTodosAsync(string userId, bool? isDone)
+        public async Task<PagedResult<TodoDto>> GetTodosPagedAsync(
+            string userId, PagedRequest req, bool? isDone, string? title, CancellationToken ct = default)
         {
-            Expression<Func<TodoItem, bool>> predicate = t => t.UserId == userId;
+            var q = _uow.TodoRepository.QueryByUser(userId);
 
             if (isDone.HasValue)
+                q = q.Where(t => t.IsDone == isDone.Value);
+
+            if (!string.IsNullOrWhiteSpace(title))
             {
-                predicate = t => t.UserId == userId && t.IsDone == isDone.Value;
+                q = q.Where(t => t.Title.Contains(title));
             }
+            // Tổng trước khi phân trang
+            var total = await q.CountAsync(ct);
 
-            var todos = await _uow.TodoRepository.GetAllAsync(predicate);
+            // Thứ tự ổn định (mặc định theo Id)
+            q = q.OrderBy(t => t.Id);
 
-            var res = _mapper.Map<List<TodoDto>>(todos);
+            // Phân trang + ProjectTo để DB chỉ trả cột cần thiết
+            var items = await q
+                .Skip((Math.Max(1, req.PageNumber) - 1) * req.PageSize)
+                .Take(req.PageSize)
+                .ProjectTo<TodoDto>(_mapper.ConfigurationProvider)
+                .ToListAsync(ct);
 
-            return res;
+            return new PagedResult<TodoDto>(items, total, req.PageNumber, req.PageSize);
         }
+
 
         public async Task<TodoDto?> UpdateTodoAsync(string userId, int id, TodoUpdateDto dto)
         {

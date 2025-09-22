@@ -23,15 +23,13 @@ namespace api.Controllers
         private readonly ITokenService _tokenService;
         private readonly IGoogleAuthService _googleSvc;
         private readonly IEmailSender _emailSender;
-        private readonly IConfiguration _cfg;
-        public AuthController(UserManager<AppUser> userManager, ITokenService tokenService, IGoogleAuthService googleSvc, SignInManager<AppUser> signInManager, IEmailSender emailSender, IConfiguration cfg)
+        public AuthController(UserManager<AppUser> userManager, ITokenService tokenService, IGoogleAuthService googleSvc, SignInManager<AppUser> signInManager, IEmailSender emailSender)
         {
             _userManager = userManager;
             _tokenService = tokenService;
             _googleSvc = googleSvc;
             _signInManager = signInManager;
             _emailSender = emailSender;
-            _cfg = cfg;
         }
 
         [HttpPost("register")]

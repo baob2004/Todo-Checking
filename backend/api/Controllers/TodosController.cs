@@ -3,7 +3,6 @@ using api.Data;
 using api.Dtos;
 using api.Entities;
 using api.Interfaces.Services;
-using api.Mapping;
 using api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -49,10 +48,19 @@ namespace api.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            var userId = GetUserId();
-            var todo = await _todoSvc.GetTodoAsync(userId, id);
+            try
+            {
+                var userId = GetUserId();
+                var todo = await _todoSvc.GetTodoAsync(userId, id);
 
-            return todo == null ? NotFound() : Ok(todo);
+                return todo == null ? NotFound() : Ok(todo);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Something Went Wrong in the {nameof(GetById)}");
+                return StatusCode(500, "Internal Server Error. Please Try Again Later");
+            }
+
         }
 
         [Authorize]
@@ -60,10 +68,19 @@ namespace api.Controllers
         public async Task<IActionResult> Create([FromBody] TodoCreateDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
-            var userId = GetUserId();
-            var createdTodo = await _todoSvc.CreateTodoAsync(userId, dto);
 
-            return CreatedAtAction(nameof(GetById), new { id = createdTodo.Id }, createdTodo);
+            try
+            {
+                var userId = GetUserId();
+                var createdTodo = await _todoSvc.CreateTodoAsync(userId, dto);
+
+                return CreatedAtAction(nameof(GetById), new { id = createdTodo.Id }, createdTodo);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Something Went Wrong in the {nameof(Create)}");
+                return StatusCode(500, "Internal Server Error. Please Try Again Later");
+            }
         }
 
         [Authorize]
@@ -71,11 +88,20 @@ namespace api.Controllers
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] TodoUpdateDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
-            var userId = GetUserId();
-            var entity = await _todoSvc.UpdateTodoAsync(userId, id, dto);
-            if (entity == null) return NotFound();
+            try
+            {
+                var userId = GetUserId();
+                var entity = await _todoSvc.UpdateTodoAsync(userId, id, dto);
+                if (entity == null) return NotFound();
 
-            return NoContent();
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Something Went Wrong in the {nameof(Update)}");
+                return StatusCode(500, "Internal Server Error. Please Try Again Later");
+            }
+
         }
 
         [Authorize]

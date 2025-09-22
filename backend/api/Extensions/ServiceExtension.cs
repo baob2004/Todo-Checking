@@ -25,11 +25,33 @@ namespace api.Extensions
             services.AddDbContext<AppDbContext>(opt =>
                 opt.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
+
+            services.ConfigureSwagger();
+
+            services.ConfigureIdentity();
+
+            services.ConfigureJWT(configuration);
+
             // CORS (để FE gọi sau này)
             services.AddCors(o => o.AddDefaultPolicy(p => p
                 .WithOrigins("http://localhost:5173")
                 .AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
 
+            services.AddAutoMapper(typeof(MapperInitializer));
+
+            services.Configure<GoogleAuthOptions>(
+                configuration.GetSection("Authentication:Google"));
+
+            services.Configure<DataProtectionTokenProviderOptions>(o =>
+            {
+                o.TokenLifespan = TimeSpan.FromHours(2);
+            });
+
+            services.AddScope();
+        }
+
+        public static void ConfigureSwagger(this IServiceCollection services)
+        {
             services.AddSwaggerGen(option =>
             {
                 option.SwaggerDoc("v1", new OpenApiInfo { Title = "TodoChecking Api", Version = "v1" });
@@ -58,8 +80,25 @@ namespace api.Extensions
                 });
             });
 
-            services.ConfigureIdentity();
+        }
 
+        public static void ConfigureIdentity(this IServiceCollection services)
+        {
+            services.AddIdentity<AppUser, IdentityRole>(opt =>
+            {
+                opt.Password.RequireDigit = true;
+                opt.Password.RequireNonAlphanumeric = true;
+                opt.Password.RequireUppercase = true;
+                opt.Password.RequiredLength = 8;
+
+                opt.User.RequireUniqueEmail = true;
+            })
+            .AddEntityFrameworkStores<AppDbContext>()
+            .AddDefaultTokenProviders();
+        }
+
+        public static void ConfigureJWT(this IServiceCollection services, IConfiguration configuration)
+        {
             services.AddAuthentication(opt =>
             {
                 opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -78,17 +117,10 @@ namespace api.Extensions
                     ValidateIssuerSigningKey = true
                 };
             });
+        }
 
-            services.AddAutoMapper(typeof(MapperInitializer));
-
-            services.Configure<GoogleAuthOptions>(
-                configuration.GetSection("Authentication:Google"));
-
-            services.Configure<DataProtectionTokenProviderOptions>(o =>
-            {
-                o.TokenLifespan = TimeSpan.FromHours(2);
-            });
-
+        public static void AddScope(this IServiceCollection services)
+        {
             services.AddScoped<IGoogleAuthService, GoogleAuthService>();
             services.AddScoped<IEmailSender, SmtpEmailSender>();
 
@@ -97,20 +129,6 @@ namespace api.Extensions
 
             services.AddScoped<ITodoRepository, TodoRepository>();
             services.AddScoped<ITodoService, TodoService>();
-        }
-        public static void ConfigureIdentity(this IServiceCollection services)
-        {
-            services.AddIdentity<AppUser, IdentityRole>(opt =>
-            {
-                opt.Password.RequireDigit = true;
-                opt.Password.RequireNonAlphanumeric = true;
-                opt.Password.RequireUppercase = true;
-                opt.Password.RequiredLength = 8;
-
-                opt.User.RequireUniqueEmail = true;
-            })
-            .AddEntityFrameworkStores<AppDbContext>()
-            .AddDefaultTokenProviders();
         }
     }
 }

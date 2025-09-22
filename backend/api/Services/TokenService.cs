@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using api.Entities;
 using api.Interfaces;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 
 namespace api.Services
@@ -19,6 +20,7 @@ namespace api.Services
         {
             _cfg = cfg;
         }
+
 
         public string CreateRefreshToken()
         {

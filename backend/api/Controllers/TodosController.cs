@@ -109,11 +109,19 @@ namespace api.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
-            var userId = GetUserId();
-            var exists = await _todoSvc.DeleteTodoAsync(userId, id);
-            if (exists is false) return NotFound();
+            try
+            {
+                var userId = GetUserId();
+                var exists = await _todoSvc.DeleteTodoAsync(userId, id);
+                if (exists is false) return NotFound();
 
-            return NoContent();
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Something Went Wrong in the {nameof(Delete)}");
+                return StatusCode(500, "Internal Server Error. Please Try Again Later");
+            }
         }
     }
 }
